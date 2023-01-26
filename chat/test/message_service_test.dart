@@ -1,6 +1,9 @@
 import 'package:chat/src/models/message.dart';
 import 'package:chat/src/models/user.dart';
+import 'package:chat/src/services/encryption/encryption_service.dart';
+import 'package:chat/src/services/message/message_service_contract.dart';
 import 'package:chat/src/services/message/message_service_impl.dart';
+import 'package:encrypt/encrypt.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rethinkdb_dart/rethinkdb_dart.dart';
 
@@ -9,12 +12,13 @@ import 'helpers.dart';
 void main() {
   Rethinkdb r = Rethinkdb();
   Connection connection;
-  MessageService sut;
+  IMessageService sut;
 
   setUp(() async {
+    final encryption = EncryptionService(Encrypter(AES(Key.fromLength(32))));
     connection = await r.connect(host: "127.0.0.1", port: 28015);
     await createDb(r, connection);
-    sut = MessageService(r, connection);
+    sut = MessageService(r, connection, encryption);
   });
 
   tearDown(() async {
@@ -47,23 +51,25 @@ void main() {
   });
 
   test('successfully subscribe and receive message', () async {
+    final contents = 'Hello';
     sut.messages(activeUser: user2).listen(expectAsync1((message) {
       expect(message.to, user2.id);
       expect(message.id, isNotEmpty);
+      expect(message.contents, contents);
     }, count: 2));
 
     Message message = Message(
       from: user1.id, 
       to: user2.id, 
       timestamp: DateTime.now(), 
-      contents: 'Hello'
+      contents: contents
     );
 
     Message secondMessage = Message(
       from: user1.id, 
       to: user2.id, 
       timestamp: DateTime.now(), 
-      contents: 'Hello again'
+      contents: contents
     );
 
     await sut.send(message);

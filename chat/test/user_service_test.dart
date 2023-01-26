@@ -1,4 +1,5 @@
 import 'package:chat/src/models/user.dart';
+import 'package:chat/src/services/user/user_service_contract.dart';
 import 'package:chat/src/services/user/user_service_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 // ignore: import_of_legacy_library_into_null_safe
@@ -8,7 +9,7 @@ import 'helpers.dart';
 void main() {
   Rethinkdb r = Rethinkdb();
   Connection connection;
-  UserService sut;
+  IUserService sut;
 
   setUp(() async {
     connection = await r.connect(host: "127.0.0.1", port: 28015);
